@@ -5,6 +5,15 @@ calculates the hours worked (handles midnight-crossing shifts correctly
 too), auto-saves every day, and shows monthly/yearly totals. The same
 logic from the Excel template has been implemented here in Go.
 
+## Live App
+
+**https://working-hours-calculator-app-go-lang.onrender.com**
+
+Just open the link above (or send it to anyone who needs to log their
+hours) — no installation needed. You can also jump straight to a
+specific month with `?y=2026&m=9` in the URL, e.g.:
+`https://working-hours-calculator-app-go-lang.onrender.com/month?y=2026&m=9`
+
 ## How it works (architecture)
 
 - **Language:** Pure Go (standard library only — no external packages
@@ -30,58 +39,40 @@ month's page.
 To change the port: `PORT=3000 ./workhours`
 To change the data file location: `DATA_FILE=/path/to/file.json ./workhours`
 
-## Deploying live for free (Fly.io — recommended)
+## Deployed on Render.com
 
-Fly.io has a free allowance that lets you host a small app for free
-**with persistent storage** (meaning your data survives even if the
-app restarts). You don't need to buy a domain — Fly gives you its own
-subdomain (`https://your-app.fly.dev`).
+This app is hosted for free on **Render.com** as a Web Service, built
+directly from the `Dockerfile` in this repo, connected to the GitHub
+repo:
+`https://github.com/hm-shahadat/Working-hours-Calculator-app-Go-Lang`
 
-1. Install the Fly CLI: https://fly.io/docs/hands-on/install-flyctl/
-2. Create an account and log in:
-   ```bash
-   fly auth signup
-   ```
-3. From this project folder, run:
-   ```bash
-   fly launch
-   ```
-   - It will ask for an app name — give it any name you like.
-   - "Would you like to set up a Postgres database?" -> **No**
-   - "Would you like to deploy now?" -> **No** (we'll create the volume first)
-4. Create a persistent volume (so data isn't lost):
-   ```bash
-   fly volumes create data --size 1
-   ```
-5. Add this mounts section to your `fly.toml` file (if it isn't there already):
-   ```toml
-   [mounts]
-     source = "data"
-     destination = "/app/data"
-   ```
-6. Deploy:
-   ```bash
-   fly deploy
-   ```
-7. Once deployed, you'll get a link (like `https://your-app.fly.dev`) —
-   send that link to your friend. They can open it and start entering
-   their time right away.
+Steps used:
 
-## Alternative: Render.com (free, but with a caveat)
+1. Pushed this project to a GitHub repo.
+2. On Render.com -> **New +** -> **Web Service** -> connected the
+   GitHub repo above.
+3. Runtime: **Docker** (auto-detected from the `Dockerfile`).
+4. Instance Type: **Free**.
+5. Clicked **Create Web Service** — Render built and deployed it
+   automatically, giving the live link above.
 
-You can also create a free "Web Service" on Render (connect your GitHub
-repo, and it will auto-detect the Docker setup), but Render's **free
-tier has an ephemeral local disk** — meaning if the app goes idle and
-then spins back up, the **data file may get reset**. So if you use
-Render, regularly download and back up `workhours-data.json`, or use
-Fly.io instead (steps above), where you get a real persistent volume
-for free.
+### Important caveat: free tier disk is ephemeral
+
+Render's free tier does **not** provide persistent disk storage. This
+means:
+
+- After ~15 minutes of no visits, the app goes to sleep. The next
+  visit takes 30-50 seconds to wake back up (then it's fast again).
+- If the service **restarts or redeploys**, the `workhours-data.json`
+  file resets and previously entered hours can be lost.
+
+**To avoid losing data:** periodically back up the data (see below).
 
 ## Data backup
 
 At any time, you can copy the `workhours-data.json` file to keep all
-your data backed up. You can access it by SSH-ing into the server
-(`fly ssh console` on Fly) or by downloading it.
+your data backed up. On Render, you can view/download it via the
+Shell tab in the service dashboard.
 
 ## New year / month — automatic
 
