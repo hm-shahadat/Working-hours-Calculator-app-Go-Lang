@@ -1,0 +1,100 @@
+{{define "month.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Working Hours — {{.MonthName}} {{.Year}}</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <h1>⏱ Working Hours Tracker</h1>
+    <nav>
+      <a href="/month?y={{.Year}}&m={{.Month}}">This Month</a>
+      <a href="/summary?y={{.Year}}">Yearly Summary</a>
+    </nav>
+  </header>
+
+  <div class="month-nav">
+    <a class="nav-btn" href="/month?y={{.PrevY}}&m={{.PrevM}}">&larr; Prev</a>
+    <h2>{{.MonthName}} {{.Year}}</h2>
+    <a class="nav-btn" href="/month?y={{.NextY}}&m={{.NextM}}">Next &rarr;</a>
+  </div>
+
+  <div class="total-bar">
+    <span>Month Total: <strong id="monthTotal">{{.TotalStr}}</strong></span>
+    <span>Days Filled: <strong id="daysFilled">{{.DaysFilled}}</strong> / {{len .Rows}}</span>
+  </div>
+
+  <table class="hours-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Start Time</th>
+        <th>End Time</th>
+        <th>Hours Worked</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Rows}}
+      <tr data-date="{{.DateKey}}">
+        <td class="date-cell">{{.Label}}</td>
+        <td><input type="time" class="start-input" value="{{.Start}}"></td>
+        <td><input type="time" class="end-input" value="{{.End}}"></td>
+        <td class="dur-cell">{{if .HasData}}{{.DurStr}}{{else}}—{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+
+  <p class="hint">Entering a Start/End Time saves and calculates automatically. Leave a day blank and it won't be counted.</p>
+  <p class="saved-indicator" id="savedMsg"></p>
+</div>
+
+<script>
+function fmtHM(totalMinutes) {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return h + 'h ' + String(m).padStart(2, '0') + 'm';
+}
+
+async function saveRow(tr) {
+  const date = tr.dataset.date;
+  const start = tr.querySelector('.start-input').value;
+  const end = tr.querySelector('.end-input').value;
+  const durCell = tr.querySelector('.dur-cell');
+
+  try {
+    const res = await fetch('/api/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({date, start, end})
+    });
+    if (!res.ok) throw new Error('save failed');
+    const data = await res.json();
+    durCell.textContent = data.hasData ? data.durStr : '—';
+    document.getElementById('monthTotal').textContent = data.monthTotal;
+    document.getElementById('daysFilled').textContent = data.daysFilled;
+    const msg = document.getElementById('savedMsg');
+    msg.textContent = 'Saved ✓ (' + date + ')';
+    msg.classList.add('show');
+    clearTimeout(window.__savedTimer);
+    window.__savedTimer = setTimeout(() => msg.classList.remove('show'), 1500);
+  } catch (e) {
+    const msg = document.getElementById('savedMsg');
+    msg.textContent = 'Save failed — check connection.';
+    msg.classList.add('show', 'error');
+  }
+}
+
+document.querySelectorAll('.hours-table tbody tr').forEach(tr => {
+  tr.querySelectorAll('input[type="time"]').forEach(inp => {
+    inp.addEventListener('change', () => saveRow(tr));
+  });
+});
+</script>
+</body>
+</html>
+{{end}}

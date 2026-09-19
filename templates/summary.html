@@ -1,0 +1,44 @@
+{{define "summary.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yearly Summary — {{.Year}}</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <h1>⏱ Working Hours Tracker</h1>
+    <nav>
+      <a href="/month">Current Month</a>
+    </nav>
+  </header>
+
+  <div class="month-nav">
+    <a class="nav-btn" href="/summary?y={{.PrevY}}">&larr; {{.PrevY}}</a>
+    <h2>{{.Year}} Summary</h2>
+    <a class="nav-btn" href="/summary?y={{.NextY}}">{{.NextY}} &rarr;</a>
+  </div>
+
+  <table class="hours-table">
+    <thead>
+      <tr><th>Month</th><th>Total Hours</th></tr>
+    </thead>
+    <tbody>
+      {{range .Months}}
+      <tr>
+        <td><a href="/month?y={{$.Year}}&m={{.Month}}">{{.Name}}</a></td>
+        <td>{{if .HasData}}{{.TotalStr}}{{else}}—{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+    <tfoot>
+      <tr class="grand-row"><td>Grand Total</td><td>{{.GrandTotal}}</td></tr>
+    </tfoot>
+  </table>
+</div>
+</body>
+</html>
+{{end}}

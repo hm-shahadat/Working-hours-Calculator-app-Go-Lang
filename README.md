@@ -1,83 +1,90 @@
 # Working Hours Tracker (Go)
 
-Ekta chhoto web app — Start Time ar End Time bosale automatic hours calculate
-hoy (midnight cross korle o thik moto), protidin auto-save hoy, ar mash/bochor
-er total dekha jay. Excel template-er logic-i eikhane Go-te implement kora.
+A small web app — enter Start Time and End Time, and it automatically
+calculates the hours worked (handles midnight-crossing shifts correctly
+too), auto-saves every day, and shows monthly/yearly totals. The same
+logic from the Excel template has been implemented here in Go.
 
-## Kivabe kaj kore (architecture)
+## How it works (architecture)
 
-- **Language:** Pure Go (standard library only — no external package lagbe na,
-  tai `go build` korle kono internet/proxy issue hoy na).
-- **Storage:** Ekta simple **JSON file** (`workhours-data.json`) — protita
-  diner date, start time, end time save thake. Database server lagbe na, tai
-  hosting shohoj ar free.
-- **Frontend:** Server-render kora HTML + ektu vanilla JavaScript (AJAX) —
-  time input change korle sathe sathe server-e save hoy ar duration/total
-  update hoye jay, page reload lage na.
+- **Language:** Pure Go (standard library only — no external packages
+  needed, so `go build` works without any internet/proxy issues).
+- **Storage:** A simple **JSON file** (`workhours-data.json`) — each
+  day's date, start time, and end time are stored there. No database
+  server needed, which makes hosting simple and free.
+- **Frontend:** Server-rendered HTML plus a bit of vanilla JavaScript
+  (AJAX) — when you change a time input, it saves to the server right
+  away and updates the duration/total instantly, without reloading
+  the page.
 
-## Local-e run kora (test korar jonno)
+## Running locally (for testing)
 
 ```bash
 go build -o workhours .
 ./workhours
 ```
 
-Tarpor browser-e `http://localhost:8080` khulle current month-er page ashbe.
+Then open `http://localhost:8080` in your browser to see the current
+month's page.
 
-Port change korte chaile: `PORT=3000 ./workhours`
-Data file location change korte chaile: `DATA_FILE=/path/to/file.json ./workhours`
+To change the port: `PORT=3000 ./workhours`
+To change the data file location: `DATA_FILE=/path/to/file.json ./workhours`
 
-## Free-e Live Deploy Kora (Fly.io — recommended)
+## Deploying live for free (Fly.io — recommended)
 
-Fly.io-te ekta free allowance ache jeta diye **persistent storage shoho**
-(mane app restart hole o data thakbe) ekta chhoto app free-e host kora jay.
-Domain kinte hobe na — Fly nijer subdomain dey (`https://your-app.fly.dev`).
+Fly.io has a free allowance that lets you host a small app for free
+**with persistent storage** (meaning your data survives even if the
+app restarts). You don't need to buy a domain — Fly gives you its own
+subdomain (`https://your-app.fly.dev`).
 
-1. Fly CLI install koro: https://fly.io/docs/hands-on/install-flyctl/
-2. Account banao ar login koro:
+1. Install the Fly CLI: https://fly.io/docs/hands-on/install-flyctl/
+2. Create an account and log in:
    ```bash
    fly auth signup
    ```
-3. Ei project folder-e giye:
+3. From this project folder, run:
    ```bash
    fly launch
    ```
-   - App-er নাম দিতে বলবে — jekono ekta name dao.
-   - "Would you like to set up a Postgres database?" → **No**
-   - "Would you like to deploy now?" → **No** (age volume banabo)
-4. Persistent volume banao (data jate delete na hoy):
+   - It will ask for an app name — give it any name you like.
+   - "Would you like to set up a Postgres database?" -> **No**
+   - "Would you like to deploy now?" -> **No** (we'll create the volume first)
+4. Create a persistent volume (so data isn't lost):
    ```bash
    fly volumes create data --size 1
    ```
-5. `fly.toml` file-e ei mounts section add koro (na thakle):
+5. Add this mounts section to your `fly.toml` file (if it isn't there already):
    ```toml
    [mounts]
      source = "data"
      destination = "/app/data"
    ```
-6. Deploy koro:
+6. Deploy:
    ```bash
    fly deploy
    ```
-7. Deploy hoye gele ekta link pabe (jemon `https://your-app.fly.dev`) — oi
-   link-i tomar bondhu ke pathiye dao. Oi link e dhukei time bosate parbe.
+7. Once deployed, you'll get a link (like `https://your-app.fly.dev`) —
+   send that link to your friend. They can open it and start entering
+   their time right away.
 
-## Alternative: Render.com (free, kintu ekta caution ache)
+## Alternative: Render.com (free, but with a caveat)
 
-Render-e o "Web Service" free-e banano jay (GitHub repo connect kore, Docker
-auto-detect hoye jabe), kintu Render-er **free tier-e local disk ephemeral**
-— mane app kichukhon idle thakle ghumiye jay, ar abar uthle **data file reset
-hoye jete pare**. Tai Render use korle regularly `workhours-data.json`
-download kore rekhe dio backup hisebe, othoba Fly.io use koro (upore
-deya steps) jekhane real persistent volume free-e paoa jay.
+You can also create a free "Web Service" on Render (connect your GitHub
+repo, and it will auto-detect the Docker setup), but Render's **free
+tier has an ephemeral local disk** — meaning if the app goes idle and
+then spins back up, the **data file may get reset**. So if you use
+Render, regularly download and back up `workhours-data.json`, or use
+Fly.io instead (steps above), where you get a real persistent volume
+for free.
 
 ## Data backup
 
-Jekono somoy `workhours-data.json` file-ta copy kore rekhe dile shob data
-backup thakbe. Server-e SSH kore (`fly ssh console` diye Fly-te) ba download
-kore dekhte paro.
+At any time, you can copy the `workhours-data.json` file to keep all
+your data backed up. You can access it by SSH-ing into the server
+(`fly ssh console` on Fly) or by downloading it.
 
-## Notun bochor / month automatic
+## New year / month — automatic
 
-Kono setup lagbe na — je kono year/month-e URL-e `?y=2027&m=1` dile oi
-month-er faka table automatic show hobe.
+No extra setup is needed — for any year/month, just visit the URL with
+`?y=2027&m=1` and the blank table for that month will show up
+automatically.
